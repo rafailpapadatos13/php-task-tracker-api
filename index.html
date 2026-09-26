@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracker - Mini Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f8f9fa;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+        }
+
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #0d6efd;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+
+            button:hover {
+                background: #0b5ed7;
+            }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            width: auto;
+            padding: 6px 14px;
+            font-size: 0.9em;
+        }
+
+            .btn-delete:hover {
+                background: #bb2d3b;
+            }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .pending {
+            background: #ffe69c;
+            color: #664d03;
+        }
+
+        .in_progress {
+            background: #cff4fc;
+            color: #055160;
+        }
+
+        .completed {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tech Task & Issue Tracker</h1>
+
+    <div class="card">
+        <h3>Προσθήκη Νέας Εργασίας</h3>
+        <input type="text" id="title" placeholder="Τίτλος εργασίας *" required>
+        <textarea id="description" placeholder="Περιγραφή τεχνικού ζητήματος..."></textarea>
+        <select id="status">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+        </select>
+        <button onclick="createTask()">Αποθήκευση Εργασίας</button>
+    </div>
+
+    <div class="card">
+        <h3>Λίστα Εργασιών</h3>
+        <div id="taskList">Φόρτωση...</div>
+    </div>
+
+    <script>
+        const API_URL = 'api.php';
+
+        async function fetchTasks() {
+            const res = await fetch(API_URL);
+            const tasks = await res.json();
+            const list = document.getElementById('taskList');
+            list.innerHTML = '';
+
+            if (tasks.length === 0) {
+                list.innerHTML = '<p style="color: #6c757d;">Δεν υπάρχουν καταχωρημένες εργασίες.</p>';
+                return;
+            }
+
+            tasks.forEach(task => {
+                list.innerHTML += `
+                    <div class="task-item">
+                        <div>
+                            <strong>${task.title}</strong>
+                            <span class="badge ${task.status}">${task.status.replace('_', ' ')}</span>
+                            <p style="margin: 6px 0 0 0; color: #6c757d; font-size: 0.95em;">${task.description}</p>
+                        </div>
+                        <button class="btn-delete" onclick="deleteTask(${task.id})">Διαγραφή</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function createTask() {
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const status = document.getElementById('status').value;
+
+            if (!title) return alert('Παρακαλώ συμπληρώστε τίτλο!');
+
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, description, status })
+            });
+
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
+            fetchTasks();
+        }
+
+        async function deleteTask(id) {
+            if (confirm('Είστε σίγουροι για τη διαγραφή;')) {
+                await fetch(`${API_URL}?id=${id}`, { method: 'DELETE' });
+                fetchTasks();
+            }
+        }
+
+        fetchTasks();
+    </script>
+</body>
+</html>
